@@ -20,6 +20,8 @@ def load_and_preprocess():
     # ------------------------------------------------------------------
     base_dir = os.path.dirname(os.path.abspath(__file__))
     data_path = os.path.join(base_dir, "data", "water_potability.csv")
+    if not os.path.exists(data_path):
+        data_path = os.path.join(base_dir, "..", "data", "water_potability.csv")
 
     df = pd.read_csv(data_path)
 
@@ -102,6 +104,8 @@ def visualize_preprocessing():
     """
     base_dir = os.path.dirname(os.path.abspath(__file__))
     data_path = os.path.join(base_dir, "data", "water_potability.csv")
+    if not os.path.exists(data_path):
+        data_path = os.path.join(base_dir, "..", "data", "water_potability.csv")
     df_raw = pd.read_csv(data_path)
 
     fitur = [c for c in df_raw.columns if c != "Potability"]
