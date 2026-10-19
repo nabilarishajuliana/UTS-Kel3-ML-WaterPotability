@@ -4,3 +4,7 @@ __pycache__/
 .env/
 .DS_Store
 *.ipynb_checkpoints/
+*.docx
+~$*
+*.zip
+viz_streamlit_app.png
