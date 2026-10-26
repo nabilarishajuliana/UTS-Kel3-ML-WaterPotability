@@ -4,10 +4,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import (
     confusion_matrix, accuracy_score,
-    precision_score, recall_score, f1_score
+    precision_score, recall_score, f1_score,
+    classification_report
 )
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
@@ -38,10 +39,13 @@ def compute_metrics(y_true, y_pred):
 # ---------------------------------------------------------------
 def run_decision_tree_pipeline(X_train, X_test, y_train, y_test):
     """
-    Pipeline: Decision Tree (Baseline UTS) dengan evaluasi SMOTE & RUS.
+    Pipeline: Decision Tree (Baseline UTS) dengan tiga skenario:
+      - Skenario A: Original (Tanpa Resampling)
+      - Skenario B: SMOTE (Oversampling)
+      - Skenario C: RUS (Undersampling)
     """
     print("=" * 60)
-    print("DECISION TREE (Baseline UTS) — SMOTE & RUS")
+    print("DECISION TREE (Baseline UTS) — Original, SMOTE, & RUS")
     print("=" * 60)
 
     # 1. RESAMPLING
@@ -51,9 +55,27 @@ def run_decision_tree_pipeline(X_train, X_test, y_train, y_test):
     rus = RandomUnderSampler(random_state=42)
     X_train_rus, y_train_rus = rus.fit_resample(X_train, y_train)
 
-    # SKENARIO A: DT + SMOTE (Sesuai tugas Juanne di UTS)
+    # SKENARIO A: DT Original (Tanpa Resampling)
     print("\n" + "-" * 50)
-    print("SKENARIO A: Decision Tree + SMOTE (Juanne - UTS)")
+    print("SKENARIO A: Decision Tree (Original - Tanpa Resampling)")
+    print("-" * 50)
+    dt_ori = DecisionTreeClassifier(random_state=42)
+    dt_ori.fit(X_train, y_train)
+    y_pred_ori = dt_ori.predict(X_test)
+    m_ori = compute_metrics(y_test, y_pred_ori)
+
+    print("Confusion Matrix (Original):")
+    print(f"  TN = {m_ori['tn']:4d} | FP = {m_ori['fp']:4d}")
+    print(f"  FN = {m_ori['fn']:4d} | TP = {m_ori['tp']:4d}")
+    print(f"  Accuracy    : {m_ori['accuracy']:.4f} ({m_ori['accuracy']*100:.2f}%)")
+    print(f"  Precision   : {m_ori['precision']:.4f} ({m_ori['precision']*100:.2f}%)")
+    print(f"  Recall      : {m_ori['recall']:.4f} ({m_ori['recall']*100:.2f}%)")
+    print(f"  Specificity : {m_ori['specificity']:.4f} ({m_ori['specificity']*100:.2f}%)")
+    print(f"  F1-Score    : {m_ori['f1_score']:.4f} ({m_ori['f1_score']*100:.2f}%)")
+
+    # SKENARIO B: DT + SMOTE (Sesuai tugas Juanne di UTS)
+    print("\n" + "-" * 50)
+    print("SKENARIO B: Decision Tree + SMOTE (Juanne - UTS)")
     print("-" * 50)
     dt_smote = DecisionTreeClassifier(random_state=42)
     dt_smote.fit(X_train_smote, y_train_smote)
@@ -69,9 +91,9 @@ def run_decision_tree_pipeline(X_train, X_test, y_train, y_test):
     print(f"  Specificity : {m_smote['specificity']:.4f} ({m_smote['specificity']*100:.2f}%)")
     print(f"  F1-Score    : {m_smote['f1_score']:.4f} ({m_smote['f1_score']*100:.2f}%)")
 
-    # SKENARIO B: DT + RUS (Sesuai tugas Risha di UTS)
+    # SKENARIO C: DT + RUS (Sesuai tugas Risha di UTS)
     print("\n" + "-" * 50)
-    print("SKENARIO B: Decision Tree + RUS (Risha - UTS)")
+    print("SKENARIO C: Decision Tree + RUS (Risha - UTS)")
     print("-" * 50)
     dt_rus = DecisionTreeClassifier(random_state=42)
     dt_rus.fit(X_train_rus, y_train_rus)
@@ -88,6 +110,11 @@ def run_decision_tree_pipeline(X_train, X_test, y_train, y_test):
     print(f"  F1-Score    : {m_rus['f1_score']:.4f} ({m_rus['f1_score']*100:.2f}%)")
 
     return {
+        'original': {
+            'model': dt_ori,
+            'y_pred': y_pred_ori,
+            **m_ori
+        },
         'smote': {
             'model': dt_smote,
             'y_pred': y_pred_smote,
@@ -107,29 +134,42 @@ def run_decision_tree_pipeline(X_train, X_test, y_train, y_test):
 def visualize_decision_tree_result(dt_results, feature_names):
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # Side-by-side Confusion Matrix
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    # 3-Panel Confusion Matrix
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
     labels = ['Tidak Layak (0)', 'Layak (1)']
 
-    sns.heatmap(dt_results['smote']['confusion_matrix'], annot=True, fmt='d',
+    # Plot Original
+    sns.heatmap(dt_results['original']['confusion_matrix'], annot=True, fmt='d',
                 cmap='Blues', cbar=False, xticklabels=labels, yticklabels=labels,
-                annot_kws={'size': 14, 'fontweight': 'bold'}, ax=axes[0])
-    acc_s = dt_results['smote']['accuracy'] * 100
-    rec_s = dt_results['smote']['recall'] * 100
-    axes[0].set_title(f"Confusion Matrix — Decision Tree + SMOTE\n(Akurasi: {acc_s:.2f}% | Recall: {rec_s:.2f}%)",
+                annot_kws={'size': 13, 'fontweight': 'bold'}, ax=axes[0])
+    acc_o = dt_results['original']['accuracy'] * 100
+    rec_o = dt_results['original']['recall'] * 100
+    axes[0].set_title(f"Decision Tree (Original)\n(Akurasi: {acc_o:.2f}% | Recall: {rec_o:.2f}%)",
                       fontsize=11, fontweight='bold')
     axes[0].set_xlabel('Prediksi')
     axes[0].set_ylabel('Aktual')
 
-    sns.heatmap(dt_results['rus']['confusion_matrix'], annot=True, fmt='d',
+    # Plot SMOTE
+    sns.heatmap(dt_results['smote']['confusion_matrix'], annot=True, fmt='d',
                 cmap='Blues', cbar=False, xticklabels=labels, yticklabels=labels,
-                annot_kws={'size': 14, 'fontweight': 'bold'}, ax=axes[1])
-    acc_r = dt_results['rus']['accuracy'] * 100
-    rec_r = dt_results['rus']['recall'] * 100
-    axes[1].set_title(f"Confusion Matrix — Decision Tree + RUS\n(Akurasi: {acc_r:.2f}% | Recall: {rec_r:.2f}%)",
+                annot_kws={'size': 13, 'fontweight': 'bold'}, ax=axes[1])
+    acc_s = dt_results['smote']['accuracy'] * 100
+    rec_s = dt_results['smote']['recall'] * 100
+    axes[1].set_title(f"Decision Tree + SMOTE\n(Akurasi: {acc_s:.2f}% | Recall: {rec_s:.2f}%)",
                       fontsize=11, fontweight='bold')
     axes[1].set_xlabel('Prediksi')
     axes[1].set_ylabel('Aktual')
+
+    # Plot RUS
+    sns.heatmap(dt_results['rus']['confusion_matrix'], annot=True, fmt='d',
+                cmap='Blues', cbar=False, xticklabels=labels, yticklabels=labels,
+                annot_kws={'size': 13, 'fontweight': 'bold'}, ax=axes[2])
+    acc_r = dt_results['rus']['accuracy'] * 100
+    rec_r = dt_results['rus']['recall'] * 100
+    axes[2].set_title(f"Decision Tree + RUS\n(Akurasi: {acc_r:.2f}% | Recall: {rec_r:.2f}%)",
+                      fontsize=11, fontweight='bold')
+    axes[2].set_xlabel('Prediksi')
+    axes[2].set_ylabel('Aktual')
 
     plt.tight_layout()
     plt.savefig(os.path.join(base_dir, 'viz_dt_1_confusion_matrix.png'), dpi=120)

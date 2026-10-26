@@ -40,10 +40,13 @@ def compute_metrics(y_true, y_pred):
 # ---------------------------------------------------------------
 def run_svm_pipeline(X_train, X_test, y_train, y_test):
     """
-    Pipeline: Support Vector Machine (Kernel RBF) dengan evaluasi SMOTE & RUS.
+    Pipeline: Support Vector Machine (Kernel RBF) dengan tiga skenario:
+      - Skenario A: Original (Tanpa Resampling)
+      - Skenario B: SMOTE (Oversampling)
+      - Skenario C: RUS (Undersampling)
     """
     print("=" * 60)
-    print("SUPPORT VECTOR MACHINE (SVM - RBF Kernel) — SMOTE & RUS")
+    print("SUPPORT VECTOR MACHINE (SVM - RBF Kernel) — Original, SMOTE, & RUS")
     print("=" * 60)
 
     # 1. RESAMPLING
@@ -53,15 +56,38 @@ def run_svm_pipeline(X_train, X_test, y_train, y_test):
     rus = RandomUnderSampler(random_state=42)
     X_train_rus, y_train_rus = rus.fit_resample(X_train, y_train)
 
-    print(f"\n[1] Persiapan Skenario Resampling:")
-    print(f"    - SMOTE : {dict(pd.Series(y_train_smote).value_counts().sort_index())} (Total: {len(y_train_smote)})")
-    print(f"    - RUS   : {dict(pd.Series(y_train_rus).value_counts().sort_index())} (Total: {len(y_train_rus)})")
+    print(f"\n[1] Persiapan Skenario Resampling (Data Train Asli: {X_train.shape[0]} sampel):")
+    print(f"    - Original : {dict(pd.Series(y_train).value_counts().sort_index())} (Total: {len(y_train)})")
+    print(f"    - SMOTE    : {dict(pd.Series(y_train_smote).value_counts().sort_index())} (Total: {len(y_train_smote)})")
+    print(f"    - RUS      : {dict(pd.Series(y_train_rus).value_counts().sort_index())} (Total: {len(y_train_rus)})")
 
     # ------------------------------------------------------------------
-    # SKENARIO A: SVM + SMOTE
+    # SKENARIO A: SVM (Original - Tanpa Resampling)
     # ------------------------------------------------------------------
     print("\n" + "-" * 50)
-    print("SKENARIO A: SVM (RBF) + SMOTE")
+    print("SKENARIO A: SVM (RBF) - Original (Tanpa Resampling)")
+    print("-" * 50)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        svm_ori = SVC(kernel='rbf', probability=True, random_state=42)
+        svm_ori.fit(X_train, y_train)
+    y_pred_ori = svm_ori.predict(X_test)
+    m_ori = compute_metrics(y_test, y_pred_ori)
+
+    print("Confusion Matrix (Original):")
+    print(f"  TN = {m_ori['tn']:4d} | FP = {m_ori['fp']:4d}")
+    print(f"  FN = {m_ori['fn']:4d} | TP = {m_ori['tp']:4d}")
+    print(f"  Accuracy    : {m_ori['accuracy']:.4f} ({m_ori['accuracy']*100:.2f}%)")
+    print(f"  Precision   : {m_ori['precision']:.4f} ({m_ori['precision']*100:.2f}%)")
+    print(f"  Recall      : {m_ori['recall']:.4f} ({m_ori['recall']*100:.2f}%)")
+    print(f"  Specificity : {m_ori['specificity']:.4f} ({m_ori['specificity']*100:.2f}%)")
+    print(f"  F1-Score    : {m_ori['f1_score']:.4f} ({m_ori['f1_score']*100:.2f}%)")
+
+    # ------------------------------------------------------------------
+    # SKENARIO B: SVM + SMOTE
+    # ------------------------------------------------------------------
+    print("\n" + "-" * 50)
+    print("SKENARIO B: SVM (RBF) + SMOTE")
     print("-" * 50)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -80,10 +106,10 @@ def run_svm_pipeline(X_train, X_test, y_train, y_test):
     print(f"  F1-Score    : {m_smote['f1_score']:.4f} ({m_smote['f1_score']*100:.2f}%)")
 
     # ------------------------------------------------------------------
-    # SKENARIO B: SVM + RUS
+    # SKENARIO C: SVM + RUS
     # ------------------------------------------------------------------
     print("\n" + "-" * 50)
-    print("SKENARIO B: SVM (RBF) + RUS")
+    print("SKENARIO C: SVM (RBF) + RUS")
     print("-" * 50)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -102,6 +128,11 @@ def run_svm_pipeline(X_train, X_test, y_train, y_test):
     print(f"  F1-Score    : {m_rus['f1_score']:.4f} ({m_rus['f1_score']*100:.2f}%)")
 
     return {
+        'original': {
+            'model': svm_ori,
+            'y_pred': y_pred_ori,
+            **m_ori
+        },
         'smote': {
             'model': svm_smote,
             'y_pred': y_pred_smote,
@@ -121,36 +152,47 @@ def run_svm_pipeline(X_train, X_test, y_train, y_test):
 def visualize_svm_result(svm_results):
     """
     Visualisasi hasil SVM:
-    1. Side-by-side Confusion Matrix (SMOTE vs RUS)
+    1. 3-Panel Confusion Matrix (Original vs SMOTE vs RUS)
     2. Bar chart perbandingan metrik evaluasi
     """
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # 1. SIDE-BY-SIDE CONFUSION MATRIX
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    # 1. 3-PANEL CONFUSION MATRIX
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
     labels = ['Tidak Layak (0)', 'Layak (1)']
 
-    # Plot SMOTE
-    sns.heatmap(svm_results['smote']['confusion_matrix'], annot=True, fmt='d',
+    # Plot Original
+    sns.heatmap(svm_results['original']['confusion_matrix'], annot=True, fmt='d',
                 cmap='Blues', cbar=False, xticklabels=labels, yticklabels=labels,
-                annot_kws={'size': 14, 'fontweight': 'bold'}, ax=axes[0])
-    acc_s = svm_results['smote']['accuracy'] * 100
-    rec_s = svm_results['smote']['recall'] * 100
-    axes[0].set_title(f"Confusion Matrix — SVM (RBF) + SMOTE\n(Akurasi: {acc_s:.2f}% | Recall: {rec_s:.2f}%)",
+                annot_kws={'size': 13, 'fontweight': 'bold'}, ax=axes[0])
+    acc_o = svm_results['original']['accuracy'] * 100
+    rec_o = svm_results['original']['recall'] * 100
+    axes[0].set_title(f"SVM (RBF) - Original\n(Akurasi: {acc_o:.2f}% | Recall: {rec_o:.2f}%)",
                       fontsize=11, fontweight='bold')
     axes[0].set_xlabel('Prediksi')
     axes[0].set_ylabel('Aktual')
 
-    # Plot RUS
-    sns.heatmap(svm_results['rus']['confusion_matrix'], annot=True, fmt='d',
+    # Plot SMOTE
+    sns.heatmap(svm_results['smote']['confusion_matrix'], annot=True, fmt='d',
                 cmap='Blues', cbar=False, xticklabels=labels, yticklabels=labels,
-                annot_kws={'size': 14, 'fontweight': 'bold'}, ax=axes[1])
-    acc_r = svm_results['rus']['accuracy'] * 100
-    rec_r = svm_results['rus']['recall'] * 100
-    axes[1].set_title(f"Confusion Matrix — SVM (RBF) + RUS\n(Akurasi: {acc_r:.2f}% | Recall: {rec_r:.2f}%)",
+                annot_kws={'size': 13, 'fontweight': 'bold'}, ax=axes[1])
+    acc_s = svm_results['smote']['accuracy'] * 100
+    rec_s = svm_results['smote']['recall'] * 100
+    axes[1].set_title(f"SVM (RBF) + SMOTE\n(Akurasi: {acc_s:.2f}% | Recall: {rec_s:.2f}%)",
                       fontsize=11, fontweight='bold')
     axes[1].set_xlabel('Prediksi')
     axes[1].set_ylabel('Aktual')
+
+    # Plot RUS
+    sns.heatmap(svm_results['rus']['confusion_matrix'], annot=True, fmt='d',
+                cmap='Blues', cbar=False, xticklabels=labels, yticklabels=labels,
+                annot_kws={'size': 13, 'fontweight': 'bold'}, ax=axes[2])
+    acc_r = svm_results['rus']['accuracy'] * 100
+    rec_r = svm_results['rus']['recall'] * 100
+    axes[2].set_title(f"SVM (RBF) + RUS\n(Akurasi: {acc_r:.2f}% | Recall: {rec_r:.2f}%)",
+                      fontsize=11, fontweight='bold')
+    axes[2].set_xlabel('Prediksi')
+    axes[2].set_ylabel('Aktual')
 
     plt.tight_layout()
     plt.savefig(os.path.join(base_dir, 'viz_svm_1_confusion_matrix.png'), dpi=120)
@@ -158,8 +200,13 @@ def visualize_svm_result(svm_results):
     print("[Viz 1] Disimpan: viz_svm_1_confusion_matrix.png")
 
     # 2. BAR CHART METRIK EVALUASI
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(10, 5))
     metrics_names = ['Accuracy', 'Precision', 'Recall', 'Specificity', 'F1-Score']
+    ori_vals = [
+        svm_results['original']['accuracy'], svm_results['original']['precision'],
+        svm_results['original']['recall'], svm_results['original']['specificity'],
+        svm_results['original']['f1_score']
+    ]
     smote_vals = [
         svm_results['smote']['accuracy'], svm_results['smote']['precision'],
         svm_results['smote']['recall'], svm_results['smote']['specificity'],
@@ -172,27 +219,25 @@ def visualize_svm_result(svm_results):
     ]
 
     x = np.arange(len(metrics_names))
-    width = 0.35
+    width = 0.25
 
-    b1 = ax.bar(x - width/2, smote_vals, width, label='SMOTE', color='#6366f1')
-    b2 = ax.bar(x + width/2, rus_vals, width, label='RUS', color='#ec4899')
+    b0 = ax.bar(x - width, ori_vals, width, label='Original (Tanpa Resampling)', color='#64748b')
+    b1 = ax.bar(x, smote_vals, width, label='SMOTE (Oversampling)', color='#3b82f6')
+    b2 = ax.bar(x + width, rus_vals, width, label='RUS (Undersampling)', color='#10b981')
 
     ax.set_ylabel('Skor')
-    ax.set_title('Perbandingan Metrik Evaluasi: SVM RBF (SMOTE vs RUS)', fontsize=12, fontweight='bold')
+    ax.set_title('Perbandingan Metrik Evaluasi: SVM (Original vs SMOTE vs RUS)', fontsize=12, fontweight='bold')
     ax.set_xticks(x)
     ax.set_xticklabels(metrics_names)
-    ax.set_ylim(0, 1.0)
-    ax.legend()
+    ax.set_ylim(0, 1.05)
+    ax.legend(loc='upper right')
     ax.grid(axis='y', linestyle='--', alpha=0.5)
 
-    for bar in b1:
-        h = bar.get_height()
-        ax.annotate(f'{h:.3f}', xy=(bar.get_x() + bar.get_width()/2, h),
-                    xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=9)
-    for bar in b2:
-        h = bar.get_height()
-        ax.annotate(f'{h:.3f}', xy=(bar.get_x() + bar.get_width()/2, h),
-                    xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=9)
+    for bars in [b0, b1, b2]:
+        for bar in bars:
+            h = bar.get_height()
+            ax.annotate(f'{h:.2f}', xy=(bar.get_x() + bar.get_width()/2, h),
+                        xytext=(0, 3), textcoords="offset points", ha='center', va='bottom', fontsize=8, fontweight='bold')
 
     plt.tight_layout()
     plt.savefig(os.path.join(base_dir, 'viz_svm_2_metrik.png'), dpi=120)
