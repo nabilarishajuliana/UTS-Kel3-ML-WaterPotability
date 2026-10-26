@@ -47,14 +47,14 @@ def main():
     visualize_svm_result(svm_res)
 
     # ------------------------------------------------------------------
-    # Step 5: Perbandingan Model 6 Konfigurasi & Visualisasi (Adel, Juanne, Risha)
+    # Step 5: Perbandingan Model 9 Konfigurasi & Visualisasi (Adel, Juanne, Risha)
     # ------------------------------------------------------------------
-    print("\n>>> STEP 5: PERBANDINGAN METRIK 6 KONFIGURASI MODEL <<<")
+    print("\n>>> STEP 5: PERBANDINGAN METRIK 9 KONFIGURASI MODEL (ORIGINAL vs SMOTE vs RUS) <<<")
     df_comp = build_comparison_table(dt_res, nb_res, svm_res)
     compare_and_visualize(df_comp)
 
     print("\n" + "=" * 70)
-    print("  SELESAI - Seluruh pipeline berhasil dieksekusi 100%!")
+    print("  SELESAI - Seluruh pipeline 9 konfigurasi berhasil dieksekusi 100%!")
     print("=" * 70)
 
 

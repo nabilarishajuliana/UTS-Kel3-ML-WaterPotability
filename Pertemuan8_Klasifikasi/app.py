@@ -251,14 +251,22 @@ st.markdown("""
     section[data-testid="stSidebar"] {
         background-color: #f8fafc !important;
         border-right: 1px solid #e2e8f0 !important;
+        min-width: 350px !important;
+        max-width: 380px !important;
+    }
+    section[data-testid="stSidebar"] > div {
+        padding-top: 0.6rem !important;
+        padding-bottom: 0.6rem !important;
+        padding-left: 0.8rem !important;
+        padding-right: 0.8rem !important;
     }
 
     .sidebar-model-active {
         background: #f0fdfa;
         border: 1.5px solid #0d9488;
         border-radius: 8px;
-        padding: 0.85rem;
-        margin-bottom: 0.6rem;
+        padding: 0.65rem;
+        margin-bottom: 0.45rem;
         box-shadow: 0 2px 6px rgba(13, 148, 136, 0.08);
     }
 
@@ -266,8 +274,8 @@ st.markdown("""
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
-        padding: 0.85rem;
-        margin-bottom: 0.6rem;
+        padding: 0.65rem;
+        margin-bottom: 0.45rem;
     }
 
     /* Buttons */
@@ -390,11 +398,42 @@ def load_models():
     dt_smote = DecisionTreeClassifier(random_state=42)
     dt_smote.fit(X_train_smote, y_train_smote)
 
+    # 5. Naive Bayes + RUS
+    nb_rus = GaussianNB()
+    nb_rus.fit(X_train_rus, y_train_rus)
+
+    # 6. Decision Tree + RUS
+    dt_rus = DecisionTreeClassifier(random_state=42)
+    dt_rus.fit(X_train_rus, y_train_rus)
+
+    # Model Original (Tanpa Resampling)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        svm_ori = SVC(kernel='rbf', probability=True, random_state=42)
+        svm_ori.fit(X_train, y_train)
+
+    nb_ori = GaussianNB()
+    nb_ori.fit(X_train, y_train)
+
+    dt_ori = DecisionTreeClassifier(random_state=42)
+    dt_ori.fit(X_train, y_train)
+
     from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
     models_info = {
+        "SVM (RBF) - Original (Tanpa Resampling)": {
+            "model": svm_ori,
+            "badge": "Akurasi Mentah Puncak (65.85%)",
+            "accuracy": accuracy_score(y_test, svm_ori.predict(X_test)),
+            "precision": precision_score(y_test, svm_ori.predict(X_test), zero_division=0),
+            "recall": recall_score(y_test, svm_ori.predict(X_test), zero_division=0),
+            "f1": f1_score(y_test, svm_ori.predict(X_test), zero_division=0),
+            "cm": confusion_matrix(y_test, svm_ori.predict(X_test)),
+            "type": "Support Vector Machine",
+            "sampling": "Original (Tanpa Resampling)"
+        },
         "SVM (RBF) - RUS": {
             "model": svm_rus,
-            "badge": "Akurasi Tertinggi (61.43%)",
+            "badge": "Akurasi Resampling Tertinggi (61.43%)",
             "accuracy": accuracy_score(y_test, svm_rus.predict(X_test)),
             "precision": precision_score(y_test, svm_rus.predict(X_test), zero_division=0),
             "recall": recall_score(y_test, svm_rus.predict(X_test), zero_division=0),
@@ -414,9 +453,20 @@ def load_models():
             "type": "Support Vector Machine",
             "sampling": "SMOTE (Oversampling)"
         },
+        "Naive Bayes - Original": {
+            "model": nb_ori,
+            "badge": "Original Tanpa Resampling (60.52%)",
+            "accuracy": accuracy_score(y_test, nb_ori.predict(X_test)),
+            "precision": precision_score(y_test, nb_ori.predict(X_test), zero_division=0),
+            "recall": recall_score(y_test, nb_ori.predict(X_test), zero_division=0),
+            "f1": f1_score(y_test, nb_ori.predict(X_test), zero_division=0),
+            "cm": confusion_matrix(y_test, nb_ori.predict(X_test)),
+            "type": "Gaussian Naive Bayes",
+            "sampling": "Original (Tanpa Resampling)"
+        },
         "Naive Bayes - SMOTE": {
             "model": nb_smote,
-            "badge": "Probabilistik Gaussian (58.23%)",
+            "badge": "F1 Naive Bayes Tertinggi (50.00%)",
             "accuracy": accuracy_score(y_test, nb_smote.predict(X_test)),
             "precision": precision_score(y_test, nb_smote.predict(X_test), zero_division=0),
             "recall": recall_score(y_test, nb_smote.predict(X_test), zero_division=0),
@@ -425,7 +475,29 @@ def load_models():
             "type": "Gaussian Naive Bayes",
             "sampling": "SMOTE (Oversampling)"
         },
-        "Decision Tree - UTS": {
+        "Naive Bayes - RUS": {
+            "model": nb_rus,
+            "badge": "RUS Undersampling (57.62%)",
+            "accuracy": accuracy_score(y_test, nb_rus.predict(X_test)),
+            "precision": precision_score(y_test, nb_rus.predict(X_test), zero_division=0),
+            "recall": recall_score(y_test, nb_rus.predict(X_test), zero_division=0),
+            "f1": f1_score(y_test, nb_rus.predict(X_test), zero_division=0),
+            "cm": confusion_matrix(y_test, nb_rus.predict(X_test)),
+            "type": "Gaussian Naive Bayes",
+            "sampling": "Random Under Sampling (RUS)"
+        },
+        "Decision Tree - Original": {
+            "model": dt_ori,
+            "badge": "DT Original (58.08%)",
+            "accuracy": accuracy_score(y_test, dt_ori.predict(X_test)),
+            "precision": precision_score(y_test, dt_ori.predict(X_test), zero_division=0),
+            "recall": recall_score(y_test, dt_ori.predict(X_test), zero_division=0),
+            "f1": f1_score(y_test, dt_ori.predict(X_test), zero_division=0),
+            "cm": confusion_matrix(y_test, dt_ori.predict(X_test)),
+            "type": "Decision Tree",
+            "sampling": "Original (Tanpa Resampling)"
+        },
+        "Decision Tree - UTS (SMOTE)": {
             "model": dt_smote,
             "badge": "Baseline UTS (56.40%)",
             "accuracy": accuracy_score(y_test, dt_smote.predict(X_test)),
@@ -435,6 +507,17 @@ def load_models():
             "cm": confusion_matrix(y_test, dt_smote.predict(X_test)),
             "type": "Decision Tree",
             "sampling": "SMOTE (Oversampling)"
+        },
+        "Decision Tree - RUS": {
+            "model": dt_rus,
+            "badge": "DT RUS (55.03%)",
+            "accuracy": accuracy_score(y_test, dt_rus.predict(X_test)),
+            "precision": precision_score(y_test, dt_rus.predict(X_test), zero_division=0),
+            "recall": recall_score(y_test, dt_rus.predict(X_test), zero_division=0),
+            "f1": f1_score(y_test, dt_rus.predict(X_test), zero_division=0),
+            "cm": confusion_matrix(y_test, dt_rus.predict(X_test)),
+            "type": "Decision Tree",
+            "sampling": "Random Under Sampling (RUS)"
         },
     }
 
@@ -564,50 +647,101 @@ except Exception as e:
 # SIDEBAR KONFIGURASI
 # ============================================================
 with st.sidebar:
-    st.markdown("<h3 style='color:#0c4a6e; font-size:1.1rem; font-weight:700; margin-bottom:0.2rem;'>PENGATURAN MODEL</h3>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size:0.8rem; color:#64748b; margin-bottom:0.8rem;'>Pilih model machine learning untuk memproses pengujian sampel air.</p>", unsafe_allow_html=True)
+    st.markdown("<h3 style='color:#0c4a6e; font-size:1.05rem; font-weight:800; margin:0 0 0.1rem 0; letter-spacing:-0.01em;'>PENGATURAN MODEL</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:0.74rem; color:#64748b; margin:0 0 0.35rem 0;'>Pilih model inferensi & evaluasi 9 konfigurasi.</p>", unsafe_allow_html=True)
 
     model_names = list(models_info.keys())
     selected_model = st.selectbox(
         "Model Inferensi:",
         model_names,
-        index=0
+        index=0,
+        label_visibility="collapsed"
     )
 
-    # Tampilkan badge status model aktif tepat di bawah dropdown agar jelas & tidak tertutup
-    active_badge = models_info[selected_model].get('badge', '')
-    st.markdown(f"""
-    <div style="background: #e0f2fe; border: 1px solid #7dd3fc; border-radius: 6px; padding: 0.4rem 0.65rem; margin-top: -0.4rem; margin-bottom: 1.2rem;">
-        <span style="font-size: 0.75rem; font-weight: 700; color: #0284c7;">Status: {active_badge}</span>
-    </div>
-    """, unsafe_allow_html=True)
+    info_curr = models_info[selected_model]
+    badge_curr = info_curr.get('badge', '')
 
-    st.markdown("<h4 style='color:#0c4a6e; font-size:0.92rem; font-weight:700;'>BENCHMARK KINERJA</h4>", unsafe_allow_html=True)
+    # Kartu Detail Model Terpilih (Ultra Compact)
+    card_html = (
+        f'<div style="background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%); border: 1.5px solid #0d9488; border-radius: 8px; padding: 0.45rem 0.65rem; margin-top: 0.2rem; margin-bottom: 0.45rem; box-shadow: 0 2px 8px -2px rgba(13, 148, 136, 0.1);">'
+        f'<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.2rem;">'
+        f'<span style="font-size:0.68rem; font-weight:800; color:#0f766e; text-transform:uppercase; letter-spacing:0.04em;">[TERPILIH]</span>'
+        f'<span style="font-size:0.67rem; font-weight:700; color:#0284c7; background:#e0f2fe; padding:0.1rem 0.4rem; border-radius:4px;">{badge_curr}</span>'
+        f'</div>'
+        f'<div style="font-size:0.78rem; font-weight:800; color:#0f172a; margin-bottom:0.25rem; line-height:1.2;">{selected_model}</div>'
+        f'<div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.2rem; font-family:monospace; font-size:0.69rem; color:#334155; background:#ffffff; padding:0.3rem 0.45rem; border-radius:5px; border:1px solid #ccfbf1;">'
+        f'<div>Akurasi : <b style="color:#0f766e;">{info_curr["accuracy"]*100:.2f}%</b></div>'
+        f'<div>F1-Score: <b style="color:#0f766e;">{info_curr["f1"]*100:.2f}%</b></div>'
+        f'<div>Recall  : <b>{info_curr["recall"]*100:.2f}%</b></div>'
+        f'<div>Presisi : <b>{info_curr["precision"]*100:.2f}%</b></div>'
+        f'</div>'
+        f'</div>'
+    )
+    st.markdown(card_html, unsafe_allow_html=True)
 
-    for name, info in models_info.items():
-        is_active = (name == selected_model)
-        css_class = "sidebar-model-active" if is_active else "sidebar-model-inactive"
-        status_tag = "<span style='color:#0d9488; font-weight:700;'>[TERPILIH]</span> " if is_active else ""
+    # Leaderboard 9 Model Ringkas (Muat 1 Layar / Siap SS)
+    st.markdown("<h4 style='color:#0c4a6e; font-size:0.80rem; font-weight:800; margin:0 0 0.25rem 0; letter-spacing:-0.01em;'>LEADERBOARD 9 MODEL (SIAP SS)</h4>", unsafe_allow_html=True)
 
-        st.markdown(f"""
-        <div class="{css_class}">
-            <div style="font-size:0.82rem; font-weight:700; color:{'#0f766e' if is_active else '#334155'};">
-                {status_tag}{name}
-            </div>
-            <div style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#64748b; margin-top:0.3rem; line-height:1.45;">
-                Akurasi : <b style="color:{'#0f766e' if is_active else '#0f172a'};">{info['accuracy']*100:.2f}%</b><br>
-                F1-Score: <b>{info['f1']*100:.2f}%</b> &bull; Recall: <b>{info['recall']*100:.2f}%</b>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    table_rows = ""
+    for idx, (name, info) in enumerate(models_info.items()):
+        is_sel = (name == selected_model)
+        row_bg = "#ccfbf1" if is_sel else ("#f8fafc" if idx % 2 == 0 else "#ffffff")
+        text_color = "color:#0f766e; font-weight:700;" if is_sel else "color:#334155;"
+        indicator = "👉 " if is_sel else ""
 
-    st.markdown("---")
+        short_name = (name.replace(" (Tanpa Resampling)", "")
+                           .replace("Decision Tree (Baseline UTS)", "DT Baseline")
+                           .replace("Decision Tree - UTS (SMOTE)", "DT SMOTE")
+                           .replace("Decision Tree - RUS", "DT RUS")
+                           .replace("Decision Tree - Original", "DT Original")
+                           .replace("Support Vector Machine (Kernel RBF)", "SVM RBF")
+                           .replace("Gaussian Naive Bayes", "Naive Bayes"))
+
+        table_rows += (
+            f'<tr style="background:{row_bg}; border-bottom:1px solid #e2e8f0; font-size:0.67rem; line-height:1.1;">'
+            f'<td style="padding:0.16rem 0.3rem; {text_color}">{indicator}{short_name}</td>'
+            f'<td style="padding:0.16rem 0.2rem; text-align:center; font-family:monospace; {text_color}">{info["accuracy"]*100:.1f}%</td>'
+            f'<td style="padding:0.16rem 0.2rem; text-align:center; font-family:monospace; {text_color}">{info["f1"]*100:.1f}%</td>'
+            f'</tr>'
+        )
+
+    table_html = (
+        '<div style="border:1px solid #cbd5e1; border-radius:6px; overflow:hidden; margin-bottom:0.4rem; box-shadow:0 1px 3px rgba(0,0,0,0.04);">'
+        '<table style="width:100%; border-collapse:collapse;">'
+        '<thead>'
+        '<tr style="background:#e2e8f0; font-size:0.68rem; font-weight:700; color:#1e293b;">'
+        '<th style="padding:0.22rem 0.3rem; text-align:left;">Model &amp; Skenario</th>'
+        '<th style="padding:0.22rem 0.2rem; text-align:center;">Acc</th>'
+        '<th style="padding:0.22rem 0.2rem; text-align:center;">F1</th>'
+        '</tr>'
+        '</thead>'
+        f'<tbody>{table_rows}</tbody>'
+        '</table>'
+        '</div>'
+    )
+    st.markdown(table_html, unsafe_allow_html=True)
+
+    with st.expander("Lihat Rincian Kartu Semua Model"):
+        for name, info in models_info.items():
+            is_active = (name == selected_model)
+            css_class = "sidebar-model-active" if is_active else "sidebar-model-inactive"
+            status_tag = "<span style='color:#0d9488; font-weight:700;'>[TERPILIH]</span> " if is_active else ""
+            card_item = (
+                f'<div class="{css_class}" style="padding:0.35rem 0.45rem; margin-bottom:0.3rem;">'
+                f'<div style="font-size:0.72rem; font-weight:700; color:{"#0f766e" if is_active else "#334155"};">'
+                f'{status_tag}{name}'
+                f'</div>'
+                f'<div style="font-family:monospace; font-size:0.66rem; color:#64748b; margin-top:0.1rem; line-height:1.25;">'
+                f'Acc: <b style="color:{"#0f766e" if is_active else "#0f172a"};">{info["accuracy"]*100:.2f}%</b> &bull; F1: <b>{info["f1"]*100:.2f}%</b> &bull; Rec: <b>{info["recall"]*100:.2f}%</b>'
+                f'</div>'
+                f'</div>'
+            )
+            st.markdown(card_item, unsafe_allow_html=True)
+
     st.markdown("""
-    <div style="font-size:0.76rem; color:#64748b; line-height:1.5;">
-        <b>Dataset:</b> Water Potability<br>
-        <b>Sampel Uji:</b> 656 data independen<br>
-        <b>Kelompok 3:</b> Adel, Juanne, Risha<br>
-        D4 Teknik Informatika - Vokasi UNAIR
+    <div style="font-size:0.68rem; color:#64748b; line-height:1.35; border-top:1px solid #e2e8f0; padding-top:0.35rem; margin-top:0.3rem;">
+        <b>Dataset:</b> Water Potability &bull; 656 Data Uji<br>
+        <b>Kelompok 3:</b> Adel, Juanne, Risha &bull; D4 TI UNAIR
     </div>
     """, unsafe_allow_html=True)
 
