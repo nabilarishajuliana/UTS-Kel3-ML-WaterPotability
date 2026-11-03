@@ -1,0 +1,4 @@
+Model,MAE,MSE,RMSE,MAPE (%),R2 Score
+Linear Regression (Baseline),1.2163,2.4042,1.5505,19.4,0.0009
+Gradient Boosting Regressor,1.2186,2.401,1.5495,19.48,0.0022
+Random Forest Regressor (Juara),1.2163,2.3623,1.537,19.4,0.0183
