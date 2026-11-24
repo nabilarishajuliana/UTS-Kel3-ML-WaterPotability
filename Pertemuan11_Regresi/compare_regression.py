@@ -9,23 +9,12 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 from preprocessing_regresi import load_and_preprocess_regression
 
-# ==============================================================================
-# TUGAS PERTEMUAN 11 - ANALISIS REGRESI KUALITAS AIR
-# Kelompok 3 (Machine Learning)
-# Bagian: Komparasi Menyeluruh 3 Model Regresi & Penentuan Model Terbaik
-# Penanggung Jawab: Juanne
-# ==============================================================================
-
 def run_regression_comparison(save_visualizations=True, export_best=True):
     """
     Melatih 3 model regresi secara head-to-head, membandingkan 5 metrik evaluasi,
     menyimpan rekap perbandingan ke CSV, dan menghasilkan visualisasi komparatif.
     """
-    print("=" * 70)
-    print(" KOMPARASI MENYELURUH 3 MODEL REGRESI PREDIKSI pH (KELOMPOK 3) ")
-    print(" Penanggung Jawab: Juanne")
-    print("=" * 70)
-
+    
     # 1. Load data & ambil scaler
     X_train, X_test, y_train, y_test, scaler = load_and_preprocess_regression(
         scale_features=True, return_scaler=True
@@ -85,7 +74,6 @@ def run_regression_comparison(save_visualizations=True, export_best=True):
     print(f"\n[2] Tabel komparasi disimpan ke CSV: {csv_path}")
 
     # 5. Tentukan Model Terbaik (Juara)
-    # Model terbaik dipilih berdasarkan RMSE terendah & R2 tertinggi
     best_row = df_results.sort_values(by=["RMSE", "R2 Score"], ascending=[True, False]).iloc[0]
     best_model_name = best_row["Model"]
     best_model = trained_models[best_model_name]

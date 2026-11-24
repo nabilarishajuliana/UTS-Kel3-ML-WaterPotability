@@ -6,15 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# Import fungsi preprocessing dari modul Adel
 from preprocessing_regresi import load_and_preprocess_regression
-
-# ==============================================================================
-# TUGAS PERTEMUAN 11 - ANALISIS REGRESI KUALITAS AIR
-# Kelompok 3 (Machine Learning)
-# Bagian: Pipeline Model Juara (Random Forest Regressor) & Evaluasi 5 Metrik
-# Penanggung Jawab: Juanne
-# ==============================================================================
 
 def train_and_evaluate_random_forest(save_plot=True, export_model=True):
     """
@@ -27,11 +19,6 @@ def train_and_evaluate_random_forest(save_plot=True, export_model=True):
       y_pred (np.ndarray): Hasil prediksi nilai pH pada data uji.
       feature_importance_df (pd.DataFrame): Kontribusi tiap fitur terhadap prediksi.
     """
-    print("=" * 65)
-    print(" PIPELINE MODEL JUARA: RANDOM FOREST REGRESSOR (PREDIKSI pH) ")
-    print(" Penanggung Jawab: Juanne")
-    print("=" * 65)
-
     # 1. Ambil data yang telah dipreprocessing
     X_train, X_test, y_train, y_test = load_and_preprocess_regression(scale_features=True)
 
@@ -87,24 +74,14 @@ def train_and_evaluate_random_forest(save_plot=True, export_model=True):
     for _, row in feature_importance_df.iterrows():
         print(f"    - {row['Fitur']:18s}: {row['Importance']*100:6.2f}%")
 
-    # 6. Analisis Hasil untuk Pembahasan Laporan (Bab II Juanne)
-    print("\n[4] Analisis Keunggulan Random Forest (Untuk Bab II Laporan):")
-    print(f"    - Random Forest menghasilkan RMSE terendah ({rmse:.4f})")
-    print(f"      dan R2 bernilai positif ({r2:.4f}).")
-    print("    - Berkat teknik Ensemble Bagging (menggabungkan 100 pohon secara paralel),")
-    print("      model ini sangat kebal terhadap noise dan outlier pada parameter air.")
-    print(f"    - Fitur paling berpengaruh dalam memprediksi pH adalah:")
-    print(f"      '{feature_importance_df.iloc[0]['Fitur']}' ({feature_importance_df.iloc[0]['Importance']*100:.2f}%)")
-    print(f"      dan '{feature_importance_df.iloc[1]['Fitur']}' ({feature_importance_df.iloc[1]['Importance']*100:.2f}%).")
-
-    # 7. Ekspor Model ke File .joblib untuk Digunakan di UI/UX Streamlit
+    # 6. Ekspor Model ke File .joblib untuk Digunakan di UI/UX Streamlit
     base_dir = os.path.dirname(os.path.abspath(__file__))
     if export_model:
         model_path = os.path.join(base_dir, "model_random_forest.joblib")
         joblib.dump(model, model_path)
         print(f"\n[5] Model terbaik berhasil diekspor ke: {model_path}")
 
-    # 8. Visualisasi Hasil Evaluasi
+    # 7. Visualisasi Hasil Evaluasi
     if save_plot:
         output_dir = os.path.join(base_dir, "visualisasi")
         os.makedirs(output_dir, exist_ok=True)
